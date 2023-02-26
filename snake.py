@@ -1,14 +1,28 @@
 from pygame import *
 from random import *
 
+class GameState:
+    def __init__(self):
+        self.life = True
+        self.timer = time.Clock()
+        self.score = 0
+        self.record = 0
+        self.pause = False
+        self.collision = False
+        self.can_swap = True
+        self.direction = None
+        self.crashed = False
+        self.segment_size = 10
+        self.segment_speed = 10
+        self.segment_positions = [(0, 0), (10, 0), (20, 0)]
+
+manager = GameState()
+
 init()
 
 size_window = 600 # Tamanho da tela
 window = display.set_mode((size_window, size_window)) # Setando largura e altura para o display
 title = display.set_caption('Snake') # Setando o título
-crashed = False
-pause = False
-timer = time.Clock()
 
 colors = {
     'green': (36, 183, 36),
@@ -21,20 +35,11 @@ colors = {
 }
 
 group = []
-direction = None
-life = True
-checking = False
-can_swap = True
-
-record = 0
-score = 0
-
 
 def message_display(text, color, size, x, y):
     fnt = font.Font('fonts\ARCADECLASSIC.ttf', size)
     text = fnt.render(text, True, color)
     window.blit(text, (x, y))
-
 
 def setInWindow():
     if group[-1].y >= size_window:
@@ -47,48 +52,42 @@ def setInWindow():
         group[-1].y = size_window
 
 def controller():
-    global life
-    global score
-    global record
-    global pause
-    global checking
-    global can_swap
+    setInWindow()
 
-    if life:
-
-        setInWindow()
-
+    if manager.life:
         draw.rect(window, colors['green'], (group[-1].x, group[-1].y, group[-1].size, group[-1].size))
-        if checking:
-            life = False
+        
+        if manager.collision: manager.life = False
+
         for s in range(len(group)-1):
             draw.rect(window, colors['green'], (group[s].x, group[s].y, group[s].size, group[s].size))
-            if not pause:
+            if not manager.pause: # Se não estiver pausado, siga as cordenadas da instância seguinte da lista
                 group[s].x = group[s+1].x
                 group[s].y = group[s+1].y
-        if not pause:
-            if direction == 'UP' and direction != 'DOWN':
-                group[-1].y -= group[-1].speed
-            elif direction == 'DOWN' and direction != 'UP':
-                group[-1].y += group[-1].speed
-            elif direction == 'LEFT' and 'RIGHT':
-                group[-1].x -= group[-1].speed
-            elif direction == 'RIGHT' and direction != 'LEFT':
-                group[-1].x += group[-1].speed
+            
+            # if group[s].x == group[-1].x and group[s].y == group[-1].y: # Checa se algum seguimento colidiu com a cabeça da cobra
+            #     manager.collision = True
+
+        if not manager.pause: # Se não estiver pausado, move a cobra seguindo as restrições.
+            if manager.direction == 'UP' and manager.direction != 'DOWN': group[-1].y -= group[-1].speed
+            elif manager.direction == 'DOWN' and manager.direction != 'UP': group[-1].y += group[-1].speed
+            elif manager.direction == 'LEFT' and 'RIGHT': group[-1].x -= group[-1].speed
+            elif manager.direction == 'RIGHT' and manager.direction != 'LEFT': group[-1].x += group[-1].speed
+               
+            if not manager.can_swap:
+                manager.can_swap = True
+            
             for s in range(len(group)-1):
-                if group[s].x == group[-1].x and group[s].y == group[-1].y:
-                    checking = True
-            if not can_swap:
-                can_swap = True
+                if group[s].x == group[-1].x and group[s].y == group[-1].y: # Checa se algum seguimento colidiu com a cabeça da cobra
+                    manager.collision = True
+
     else:
-        if record < score:
-            record = score
+        if manager.record < score: manager.record = score
         window.fill(colors['background'])
         message_display('PRESS  R  TO  RESTART', colors['white'], 40, 125, 250)
 
 
-def grade():
-
+def grade(): # Desenhando as grades do mapa
     for line in range(2, 24):
         draw.line(window, colors['color_grade'], (0, line*25), (size_window, line*25), 1)
     for row in range(0, 24):
@@ -132,7 +131,7 @@ class Apple:
         draw.rect(window, colors['red'], (apple.x, apple.y, apple.size, apple.size))
 
 def isPaused():
-    if not pause:
+    if not manager.pause:
         colors['white'] = (255, 255, 255)
         colors['green'] = (36, 183, 36)
         colors['red'] = (239, 39, 39)
@@ -146,36 +145,36 @@ def isPaused():
 
 
 apple = Apple()
-while not crashed:
+while not manager.crashed:
     for e in event.get():
         if e.type == QUIT:
-            crashed = True
+            manager.crashed = True
         if e.type == KEYDOWN:
-            if not pause and can_swap:
-                if (e.key == K_w or e.key == K_UP) and direction != 'DOWN' and group[-1].x % 25 == 0:
-                    direction = 'UP'
-                    can_swap = not can_swap
-                elif (e.key == K_a or e.key == K_LEFT) and direction != 'RIGHT' and group[-1].y % 25 == 0:
-                    direction = 'LEFT'
-                    can_swap = not can_swap
-                elif (e.key == K_s or e.key == K_DOWN) and direction != 'UP' and group[-1].x % 25 == 0:
-                    direction = 'DOWN'
-                    can_swap = not can_swap
-                elif (e.key == K_d or e.key == K_RIGHT) and direction != 'LEFT' and group[-1].y % 25 == 0:
-                    direction = 'RIGHT'
-                    can_swap = not can_swap
-            if e.key == K_r:
+            if not manager.pause and manager.can_swap:
+                if (e.key == K_w or e.key == K_UP) and manager.direction != 'DOWN' and group[-1].x % 25 == 0: # CIMA
+                    manager.direction = 'UP'
+                    manager.can_swap = not manager.can_swap
+                if (e.key == K_a or e.key == K_LEFT) and manager.direction != 'RIGHT' and group[-1].y % 25 == 0: # ESQUERDA
+                    manager.direction = 'LEFT'
+                    manager.can_swap = not manager.can_swap
+                if (e.key == K_s or e.key == K_DOWN) and manager.direction != 'UP' and group[-1].x % 25 == 0: # BAIXO
+                    manager.direction = 'DOWN'
+                    manager.can_swap = not manager.can_swap
+                if (e.key == K_d or e.key == K_RIGHT) and manager.direction != 'LEFT' and group[-1].y % 25 == 0: # ESQUERDA
+                    manager.direction = 'RIGHT'
+                    manager.can_swap = not manager.can_swap
+            if e.key == K_r: # RESET
                 group.clear()
                 head = Snake()
-                direction = None
-                life = True
-                checking = False
-                can_swap = False
-                pause = False
-            if e.key == K_SPACE and life:
-                pause = not pause
-            if e.key == K_z:
-                body = Snake()
+                manager.direction = None
+                manager.life = True
+                manager.collision = False
+                manager.can_swap = False
+                manager.pause = False
+                # for i in (manager.collision, manager.can_swap, manager.pause): i = False # Resetando valores
+            if e.key == K_SPACE and manager.life: manager.pause = not manager.pause # PAUSE
+            if e.key == K_ESCAPE: quit()
+            if e.key == K_z: body = Snake() # (Z) CHEAT DESENVOLVEDOR
 
     window.fill(colors['background'])
     
@@ -186,9 +185,9 @@ while not crashed:
     apple.draw()
     controller()
     score = len(group)-1
-    message_display(f'{record:03}', colors['gold'], 50, 25, 0)
+    message_display(f'{manager.record:03}', colors['gold'], 50, 25, 0)
     message_display(f'{score:03}', colors['white'], 50, size_window-100, 0)
     display.update()
-    timer.tick(10+(len(group)*0.1))
+    manager.timer.tick(10+(len(group)*0.1))
 
 quit()
