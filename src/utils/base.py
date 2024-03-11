@@ -12,6 +12,6 @@ def resource_path(relative_path):
     return os.path.join(base_path, relative_path)
 
 def message_display(text, color, size, x, y, window):
-    font = pygame.font.Font('assets/fonts/ARCADECLASSIC.ttf', size)
+    font = pygame.font.Font(resource_path('assets/fonts/ARCADECLASSIC.ttf'), size)
     text = font.render(text, True, color)
     window.blit(text, (x, y))
