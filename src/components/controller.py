@@ -4,6 +4,7 @@ from utils.constants import *
 from components.snake import Snake
 
 class Controller:
+    running = True
     alive = True
     timer = pygame.time.Clock()
     score = 0

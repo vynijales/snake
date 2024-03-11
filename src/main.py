@@ -22,11 +22,11 @@ def main():
     Controller.reset()
 
     apple = Apple()
-    while True:
+
+    while Controller.running:
         for e in pygame.event.get():
             if e.type == pygame.QUIT:
-                pygame.quit()
-                break
+                Controller.running = False
             if e.type == pygame.KEYDOWN:
                 if not Controller.pause and Controller.alive:
                     if e.key == pygame.K_z:
@@ -35,8 +35,7 @@ def main():
                 Controller.keyboard(e)
 
                 if e.key == pygame.K_ESCAPE:
-                    pygame.quit()
-                    break
+                    Controller.running = False
 
         window.fill(COLORS['BACKGROUND'])
 
@@ -62,6 +61,8 @@ def main():
         Controller.swappable = True
         pygame.display.update()
         Controller.timer.tick(FPS+(len(Controller.group)*0.1))
+
+    pygame.quit()
 
 
 if __name__ == "__main__":
